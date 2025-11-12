@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>WOOD FIRE ABU — Smart QR Menu</title>
+<style>
+  :root{--accent:#0b6b75;--muted:#556;--card:#fff}
+  body{font-family: 'Georgia', serif;margin:0;background:#f6fcfc;color:#072028}
+  .container{max-width:900px;margin:12px auto;padding:16px}
+  header{display:flex;gap:14px;align-items:center}
+  .logo{width:84px;height:84px;border-radius:12px;background:linear-gradient(180deg,#e6fbff,#d7f3f4);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;color:var(--accent)}
+  h1{margin:0;font-size:28px;color:var(--accent)}
+  .tabs{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap}
+  .tab{padding:8px 12px;border-radius:8px;background:#fff;box-shadow:0 4px 12px rgba(10,20,20,0.04);cursor:pointer;font-weight:700}
+  .tab.active{background:var(--accent);color:#fff}
+  .hero{height:160px;border-radius:12px;background-size:cover;background-position:center;margin-bottom:12px;box-shadow:0 6px 18px rgba(10,20,20,0.06)}
+  .grid{display:grid;grid-template-columns:1fr 140px;gap:12px;align-items:start}
+  .card{background:var(--card);padding:12px;border-radius:10px;box-shadow:0 6px 18px rgba(10,20,20,0.04)}
+  .item{display:flex;justify-content:space-between;align-items:center;padding:8px 6px;border-bottom:1px dashed #eee}
+  .item:last-child{border-bottom:0}
+  .iname{font-weight:700}
+  .iprice{font-weight:800}
+  .iopts{display:flex;gap:8px}
+  .btn{padding:8px 10px;border-radius:8px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+  .cart{position:fixed;right:16px;bottom:16px;background:#fff;padding:12px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.12);width:300px;max-width:90%}
+  .cart h3{margin:0 0 8px 0}
+  .cart-list{max-height:220px;overflow:auto;margin-bottom:8px}
+  .small{font-size:13px;color:var(--muted)}
+  .footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+  .wa-link{display:inline-flex;gap:8px;align-items:center;padding:8px 10px;border-radius:8px;background:#25D366;color:#fff;text-decoration:none;font-weight:700}
+  @media (max-width:720px){
+    .grid{grid-template-columns:1fr}
+    .cart{left:10px;right:10px}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">WF</div>
+    <div>
+      <h1>WOOD FIRE ABU</h1>
+      <div class="small">Home-made wood-fire swaad — Home delivery</div>
+    </div>
+  </header>
+
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-tab="pizza">PIZZA</div>
+    <div class="tab" data-tab="sandwich">SANDWICH</div>
+    <div class="tab" data-tab="others">OTHER ITEMS</div>
+  </div>
+
+  <!-- Hero areas: you can replace the background-image URLs with actual images later -->
+  <div id="hero" class="hero" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22900%22 height=%22160%22><rect width=%22900%22 height=%22160%22 fill=%22%23eaf8f8%22/></svg>')"></div>
+
+  <div class="grid">
+    <div class="card" id="menu-area">
+      <!-- Menu content injected by JS -->
+    </div>
+
+    <div class="card">
+      <h3>Order Direct</h3>
+      <div class="small">WhatsApp number:</div>
+      <div style="margin:8px 0;font-weight:900">+91 82090 28066</div>
+
+      <div style="margin-top:8px">
+        <button class="btn" onclick="sendCart()">Send cart on WhatsApp</button>
+        <button class="btn ghost" onclick="clearCart()">Clear</button>
+      </div>
+
+      <div style="margin-top:12px" class="small">
+        Tip: Scan QR → tap items → "Add" → phir "Send cart on WhatsApp" — order ek hi message me shop ko mil jayega.<br/><br/>
+        Agar ap turant ek item bhejna chahte hain to "Order" button use karein — WhatsApp khul jayega with prefilled message.
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">© WOOD FIRE ABU — Scan & Order • Visiting-card friendly</div>
+</div>
+
+<!-- Floating cart -->
+<div class="cart" id="cart" aria-live="polite">
+  <h3>Cart</h3>
+  <div class="cart-list" id="cart-list">
+    <div class="small">Cart is empty</div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div class="small">Total:</div>
+    <div style="font-weight:900" id="cart-total">₹0</div>
+  </div>
+  <div style="margin-top:8px;display:flex;gap:8px">
+    <button class="btn" onclick="sendCart()">Send on WhatsApp</button>
+    <button class="btn ghost" onclick="clearCart()">Clear</button>
+  </div>
+</div>
+
+<script>
+/* ====== Menu data (extracted from your images) ====== */
+const WHATSAPP_NUMBER = '+918209028066'; // shop number
+const MENU = {
+  pizza: {
+    hero: '',
+    items:[
+      {name:'Sweet Corn (Regular 7")',price:99},
+      {name:'Cheese Onion (Regular 7")',price:99},
+      {name:'Margherita (Regular 7")',price:99},
+      {name:'Paneer Tikka (Medium 9")',price:199},
+      {name:'Fire House (Medium 9")',price:199},
+      {name:'Corn East (Medium 9")',price:199},
+      {name:'Veg Messicana (Spicy)',price:199},
+      {name:'Forest Villa',price:199},
+      {name:'American Heat',price:199},
+      {name:'Wood Fire Special',price:299}
+    ]
+  },
+  sandwich:{
+    hero:'',
+    items:[
+      {name:'Aloo Matar (2 layer)',price:39},
+      {name:'Bread Butter',price:39},
+      {name:'Bread Jam',price:39},
+      {name:'Tandoori Paneer Cheese (3 layer)',price:99},
+      {name:'Schezwan Paneer Cheese (3 layer)',price:99},
+      {name:'Veg Sandwich (3 layer)',price:79},
+      {name:'Aloo Masala Sandwich',price:79},
+      {name:'Mixed Veg Sandwich',price:79}
+    ]
+  },
+  others:{
+    hero:'',
+    items:[
+      {name:'Plain Garlic Bread',price:99},
+      {name:'Cheese Garlic',price:129},
+      {name:'Corn, Chilli, Garlic',price:149},
+      {name:'Paneer Tikka Garlic',price:159},
+      {name:'Wood Fire Special (Garlic)',price:179},
+      {name:'Salted Fries',price:69},
+      {name:'Peri-Peri Fries',price:89},
+      {name:'Veggie Burger',price:59},
+      {name:'Cheese Burger',price:69},
+      {name:'Mexican Burger',price:89},
+      {name:'Plain Maggie',price:49},
+      {name:'Veg Maggie',price:59},
+      {name:'Cheese Maggie',price:69},
+      {name:'Red Sauce Pasta',price:169},
+      {name:'White Sauce Pasta',price:169}
+    ]
+  }
+};
+
+/* ====== Cart logic ====== */
+let CART = [];
+
+function renderMenu(tab){
+  const area = document.getElementById('menu-area');
+  const data = MENU[tab];
+  // update hero
+  const hero = document.getElementById('hero');
+  if(data.hero) hero.style.backgroundImage = `url("${data.hero}")`; else hero.style.backgroundImage = `linear-gradient(90deg,#eaf8f8,#e6f2f7)`;
+  // build items
+  let html = '<h2 style="margin-top:0">'+tab.toUpperCase()+'</h2>';
+  html += '<div>';
+  data.items.forEach((it, idx)=>{
+    html += `<div class="item">
+      <div>
+        <div class="iname">${it.name}</div>
+        <div class="small">₹${it.price}</div>
+      </div>
+      <div class="iopts">
+        <button class="btn ghost" onclick="addToCart('${tab}', ${idx})">Add</button>
+        <button class="btn" onclick="orderNow('${tab}', ${idx})">Order</button>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  area.innerHTML = html;
+}
+
+function addToCart(tab, idx){
+  const item = MENU[tab].items[idx];
+  CART.push(item);
+  renderCart();
+}
+
+function renderCart(){
+  const list = document.getElementById('cart-list');
+  if(CART.length === 0){
+    list.innerHTML = '<div class="small">Cart is empty</div>';
+    document.getElementById('cart-total').innerText = '₹0';
+    return;
+  }
+  let html = '';
+  let total = 0;
+  CART.forEach((it, i)=>{
+    total += Number(it.price);
+    html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0">
+      <div style="flex:1">
+        <div style="font-weight:700">${it.name}</div>
+        <div class="small">₹${it.price}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <button class="btn ghost" onclick="removeFromCart(${i})">−</button>
+      </div>
+    </div>`;
+  });
+  list.innerHTML = html;
+  document.getElementById('cart-total').innerText = '₹' + total;
+}
+
+function removeFromCart(index){
+  CART.splice(index,1);
+  renderCart();
+}
+
+function clearCart(){ CART = []; renderCart(); }
+
+function orderNow(tab, idx){
+  const it = MENU[tab].items[idx];
+  const text = encodeURIComponent(`Namaste! Mujhe ek "${it.name}" chahiye. (WOOD FIRE ABU)`);
+  const wa = 'https://wa.me/' + WHATSAPP_NUMBER.replace(/\D/g,'') + '?text=' + text;
+  window.open(wa,'_blank');
+}
+
+function sendCart(){
+  if(CART.length === 0){
+    alert('Cart khaali hai — pehle kuch add karo.');
+    return;
+  }
+  let msg = 'Namaste! Mera order from WOOD FIRE ABU:%0A';
+  let total = 0;
+  CART.forEach((it, i)=>{
+    msg += `${i+1}. ${it.name} - ₹${it.price}%0A`;
+    total += Number(it.price);
+  });
+  msg += `%0ATotal: ₹${total}%0AAddress: (please add address here)%0AContact: (your phone)`;
+  const wa = 'https://wa.me/' + WHATSAPP_NUMBER.replace(/\D/g,'') + '?text=' + msg;
+  window.open(wa,'_blank');
+}
+
+/* ====== Tabs handling ====== */
+document.querySelectorAll('.tab').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+    renderMenu(el.dataset.tab);
+  });
+});
+
+// initial render
+renderMenu('pizza');
+renderCart();
+</script>
+</body>
+</html>
